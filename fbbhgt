@@ -1,0 +1,57 @@
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Diretório para uploads
+$uploadDir = 'uploads/';
+
+// Criar diretório se não existir
+if (!file_exists($uploadDir)) {
+    mkdir($uploadDir, 0777, true);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
+    $file = $_FILES['file'];
+    $usuarioId = $_POST['usuario_id'] ?? '';
+    $avaliacaoId = $_POST['avaliacao_id'] ?? '';
+    
+    // Validar arquivo
+    $allowedTypes = ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png'];
+    $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    if (!in_array($fileExtension, $allowedTypes)) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Tipo de arquivo não permitido'
+        ]);
+        exit;
+    }
+    
+    // Gerar nome único para o arquivo
+    $fileName = time() . '_' . uniqid() . '.' . $fileExtension;
+    $filePath = $uploadDir . $fileName;
+    
+    if (move_uploaded_file($file['tmp_name'], $filePath)) {
+        // Retornar URL do arquivo
+        $fileUrl = $filePath;
+        
+        echo json_encode([
+            'success' => true,
+            'file_url' => $fileUrl,
+            'file_name' => $file['name']
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Erro ao fazer upload do arquivo'
+        ]);
+    }
+} else {
+    echo json_encode([
+        'success' => false,
+        'error' => 'Nenhum arquivo enviado'
+    ]);
+}
+?>
